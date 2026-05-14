@@ -10,24 +10,108 @@
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    .download-card {
-      max-width: 560px;
+    .calculator {
+      width: min(100%, 380px);
       border: 0;
       border-radius: 24px;
+      overflow: hidden;
       box-shadow: 0 24px 80px rgba(0, 0, 0, .28);
+    }
+    .display {
+      min-height: 96px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: clamp(2rem, 9vw, 3rem);
+      font-weight: 700;
+      text-align: right;
+      word-break: break-all;
+    }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: #dee2e6;
+    }
+    .keypad .btn {
+      border-radius: 0;
+      min-height: 72px;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .span-2 {
+      grid-column: span 2;
     }
   </style>
 </head>
 <body class="d-flex align-items-center justify-content-center p-4">
-  <main class="card download-card p-4 p-md-5 text-center">
-    <h1 class="fw-bold mb-3">AI 계산기</h1>
-    <p class="text-secondary mb-4">
-      Windows에서 실행할 수 있는 독립형 계산기 프로그램입니다.
-      로컬 서버나 브라우저 없이 EXE 파일로 바로 실행됩니다.
-    </p>
-    <a class="btn btn-primary btn-lg" href="./exe/AI_Calculator.exe" download>
-      AI_Calculator.exe 다운로드
-    </a>
+  <main class="calculator bg-white">
+    <section class="p-4 text-center">
+      <h1 class="fw-bold mb-1">AI 계산기</h1>
+      <p class="text-secondary mb-0">브라우저에서 바로 사용하는 간단 계산기</p>
+    </section>
+    <div id="display" class="display d-flex align-items-end justify-content-end p-3">0</div>
+    <section class="keypad">
+      <button class="btn btn-danger" data-action="clear">C</button>
+      <button class="btn btn-warning text-white" data-value="/">/</button>
+      <button class="btn btn-warning text-white" data-value="*">*</button>
+      <button class="btn btn-warning text-white" data-value="-">-</button>
+      <button class="btn btn-light" data-value="7">7</button>
+      <button class="btn btn-light" data-value="8">8</button>
+      <button class="btn btn-light" data-value="9">9</button>
+      <button class="btn btn-warning text-white" data-value="+">+</button>
+      <button class="btn btn-light" data-value="4">4</button>
+      <button class="btn btn-light" data-value="5">5</button>
+      <button class="btn btn-light" data-value="6">6</button>
+      <button class="btn btn-light" data-value=".">.</button>
+      <button class="btn btn-light" data-value="1">1</button>
+      <button class="btn btn-light" data-value="2">2</button>
+      <button class="btn btn-light" data-value="3">3</button>
+      <button class="btn btn-info text-white" data-action="calculate">=</button>
+      <button class="btn btn-light span-2" data-value="0">0</button>
+      <button class="btn btn-light" data-value="00">00</button>
+      <button class="btn btn-secondary" data-action="backspace">←</button>
+    </section>
   </main>
+  <script>
+    const display = document.getElementById('display');
+
+    function appendValue(value) {
+      display.textContent = display.textContent === '0' || display.textContent === 'Error'
+        ? value
+        : display.textContent + value;
+    }
+
+    function calculate() {
+      const expression = display.textContent;
+      if (!/^[0-9+\-*/.() ]+$/.test(expression)) {
+        display.textContent = 'Error';
+        return;
+      }
+
+      try {
+        const result = Function(`"use strict"; return (${expression})`)();
+        display.textContent = Number.isInteger(result) ? String(result) : String(Number(result.toFixed(10)));
+      } catch {
+        display.textContent = 'Error';
+      }
+    }
+
+    document.querySelector('.keypad').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+
+      if (button.dataset.value) appendValue(button.dataset.value);
+      if (button.dataset.action === 'clear') display.textContent = '0';
+      if (button.dataset.action === 'backspace') display.textContent = display.textContent.length > 1 ? display.textContent.slice(0, -1) : '0';
+      if (button.dataset.action === 'calculate') calculate();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (/^[0-9+\-*/.]$/.test(event.key)) appendValue(event.key);
+      if (event.key === 'Enter') calculate();
+      if (event.key === 'Escape') display.textContent = '0';
+      if (event.key === 'Backspace') display.textContent = display.textContent.length > 1 ? display.textContent.slice(0, -1) : '0';
+    });
+  </script>
 </body>
 </html>
